@@ -236,6 +236,7 @@ def getLastBlock():
 def wait():
 	time.sleep(3) #3 seconds
 
+
 def printHeader():
 	os.system('clear')
 	print('##########################')
@@ -278,7 +279,7 @@ if __name__ == '__main__':
 		# PiHole Enabled .
 		# LastBlock
 
-		if is_connected == False:
+		if is_connected() == False:
 			display.lcd_clear()
 			display.lcd_display_string("No network.", 1)
 			display.lcd_display_string("Check router.", 2)
@@ -287,7 +288,7 @@ if __name__ == '__main__':
 			wait()
 			continue
 
-		if detectPihole == False:
+		if detectPihole() == False:
 			display.lcd_clear()
 			display.lcd_display_string("PiHole not found", 1)
 			display.lcd_display_string("Check LAN/Power.", 2)
@@ -297,7 +298,7 @@ if __name__ == '__main__':
 			wait()
 			continue
 
-		if getPiholeStatus == False:
+		if getPiholeStatus() == False:
 			display.lcd_clear()
 			display.lcd_display_string("PiHole Off", 1)
 			display.lcd_display_string("Please wait...", 2)
