@@ -123,15 +123,15 @@ def handler(signal_received, frame):
 
 # Checks for updates
 def checkUpdate():
-	updateUrl = "https://raw.githubusercontent.com/maxi07/speedtest-display/master/doc/version"
+	updateUrl = "https://raw.githubusercontent.com/maxi07/PiHole-Monitoring/main/doc/version"
 	try:
 		f = requests.get(updateUrl)
 		latestVersion = float(f.text)
 		if latestVersion > version:
 			printwarning("There is an update available.")
-			printwarning("Head over to https://github.com/maxi07/speedtest-display to get the hottest features.")
+			printwarning("Head over to https://github.com/maxi07/PiHole-Monitoring to get the hottest features.")
 		else:
-			print("Application is running latest version.")
+			print("Application is running latest version " + str(version) + ".")
 	except Exception as e:
 		printerror("An error occured while searching for updates.")
 		printerror(e)
@@ -255,6 +255,9 @@ if __name__ == '__main__':
 	# Tell Python to run the handler() function when SIGINT is recieved
 	signal(SIGINT, handler)
 
+	# Check version
+	checkUpdate()
+
 	# Read config first
 	readConfig()
 
@@ -265,6 +268,7 @@ if __name__ == '__main__':
 		time.sleep(1.5)
 	else:
 		printerror("PiHole could not be found!")
+
 
 	nlb = ""
 	lb = ""
