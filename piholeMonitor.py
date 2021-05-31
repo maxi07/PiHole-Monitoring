@@ -48,6 +48,7 @@ version = 1.0
 hostname = None
 piholeApi = None
 webtoken = None
+basicInfo = None
 
 # Check for arguments
 parser = argparse.ArgumentParser()
@@ -94,6 +95,32 @@ except IOError:
 except Exception as e:
 	printerror("An unknown error occured while connecting to the lcd.")
 	printerror(e)
+
+# Define custom LCD characters
+# Char generator can be found at https://omerk.github.io/lcdchargen/
+fontdata1 = [
+	# char(0) - Check
+	[0b00000,
+	0b00001,
+	0b00011,
+	0b10110,
+	0b11100,
+	0b01000,
+	0b00000,
+	0b00000],
+
+	# char(1) - Block
+	[0b00000,
+	0b11111,
+	0b10011,
+	0b10101,
+	0b11001,
+	0b11111,
+	0b00000,
+	0b00000]
+]
+display.lcd_load_custom_chars(fontdata1)
+
 
 #############
 # FUNCTIONS #
@@ -213,21 +240,39 @@ def is_connected():
 def clearDisplayLine(line):
 	display.lcd_display_string("                ", line)
 
+
 # Check if PiHole Status is enabled
 def getPiholeStatus():
-	r = urlopen(piholeApi)
-	data = json.loads(r.read())
-	if data['status'] == "enabled":
+	if basicInfo['status'] == "enabled":
 		return True
 	else:
 		return False
 
+# Read basic info and store JSON
+def getBasicInfo():
+	global basicInfo
+	try:
+		r = urlopen(piholeApi)
+		basicInfo = json.loads(r.read())
+	except Exception as e:
+		printerror("An error occured while reading API.")
+		printerror(e)
+
+
+
+# Read number of requests today
+def getTodayRequest():
+	return basicInfo['dns_queries_today']
+
+# Get ad blocked today
+def getTodayBlocked():
+	return basicInfo['ads_blocked_today']
 
 # Get last block from PiHole
 def getLastBlock():
 	try:
 		url = requests.get(piholeApi + "recentBlocked&auth=" + webtoken)
-		return(url.text)
+		return (url.text)
 	except:
 		printerror("The last PiHole block could not be read.")
 		return None
@@ -245,6 +290,8 @@ def printHeader():
 	print()
 	now = datetime.now()
 	print("Last API call:\t\t" + now.strftime("%Y-%m-%d %H:%M:%S"))
+	print("Requests / blocked:\t" + str(getTodayRequest()) + "/" + str(getTodayBlocked()))
+
 	cpu = CPUTemperature()
 	cpu_r = round(cpu.temperature, 2)
 	print("Current CPU:\t\t" + str(cpu_r) + "°C")
@@ -272,11 +319,15 @@ if __name__ == '__main__':
 
 	nlb = ""
 	lb = ""
+	line1 = ""
 	run = 0
+	display.lcd_clear()
 	while True:
+
 
 		# Check if internet is reachable
 		# Check if PiHole is reachable
+		# Get basicInfo from API
 		# Check if PiHole is enabled
 		# Print to display
 
@@ -302,6 +353,9 @@ if __name__ == '__main__':
 			wait()
 			continue
 
+		# Now get the basic API info and store it
+		getBasicInfo()
+
 		if getPiholeStatus() == False:
 			display.lcd_clear()
 			display.lcd_display_string("PiHole Off", 1)
@@ -319,12 +373,18 @@ if __name__ == '__main__':
 			lb = "Error reading"
 
 
-		if run == 0:
-			run = 1
-			display.lcd_display_string("PiHole enabled. ", 1)
-		else:
-			run = 0
-			display.lcd_display_string("PiHole enabled .", 1)
+		line2 = chr(0) + " " + str(getTodayRequest()) + "  " + chr(1) + " " + str(getTodayBlocked())
+		if line1 is not line2:
+			line1 = line2
+			display.lcd_display_string(line2, 1)
+
+
+#		if run == 0:
+#			run = 1
+#			display.lcd_display_string("PiHole enabled. ", 1)
+#		else:
+#			run = 0
+#			display.lcd_display_string("PiHole enabled .", 1)
 
 		if nlb is not lb:
 			print("Last block:\t\t" + nlb)
