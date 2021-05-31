@@ -317,7 +317,6 @@ if __name__ == '__main__':
 		printerror("PiHole could not be found!")
 
 
-	nlb = ""
 	lb = ""
 	line1 = ""
 	run = 0
@@ -367,14 +366,9 @@ if __name__ == '__main__':
 			continue
 
 		printHeader()
-		nlb = getLastBlock()
-		if nlb is None:
-			printerror("The last block from PiHole could not be read (Returned nothing)")
-			lb = "Error reading"
-
 
 		line2 = chr(0) + " " + str(getTodayRequest()) + "  " + chr(1) + " " + str(getTodayBlocked())
-		if line1 is not line2:
+		if line1 != line2:
 			line1 = line2
 			display.lcd_display_string(line2, 1)
 
@@ -386,8 +380,16 @@ if __name__ == '__main__':
 #			run = 0
 #			display.lcd_display_string("PiHole enabled .", 1)
 
-		if nlb is not lb:
-			print("Last block:\t\t" + nlb)
+		nlb = getLastBlock()
+		if nlb is None:
+			printerror("The last block from PiHole could not be read (Returned nothing)")
+			lb = "Error reading"
+
+		print("Last block:\t\t" + nlb)
+
+		if nlb != lb:
+			lb = nlb
+			clearDisplayLine(2)
 			display.lcd_display_string(nlb, 2)
 		wait()
 
