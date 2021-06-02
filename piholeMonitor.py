@@ -44,7 +44,8 @@ except:
 	exit(2)
 
 # Define Var
-version = 1.0
+version = 1.1
+lcd_width = 16
 hostname = None
 piholeApi = None
 webtoken = None
@@ -61,6 +62,10 @@ if args.version:
 	print(str(version))
 	exit(0)
 
+# Define print function for Display
+def printLCD(msg, line=1):
+	display.lcd_display_string(str(msg.ljust(lcd_width, ' ')), line)
+
 # Load driver for LCD display
 try:
 	print("Loading lcd drivers...")
@@ -73,8 +78,8 @@ try:
 	else:
 		display.backlight(1)
 
-	display.lcd_display_string("Loading PiHole..", 1)
-	display.lcd_display_string("V " + str(version), 2)
+	printLCD("Loading PiHole..", 1)
+	printLCD("V " + str(version), 2)
 	time.sleep(1.5)
 except IOError:
 	printerror("The connection to the display failed.")
@@ -143,8 +148,8 @@ def handler(signal_received, frame):
 	print()
 	printwarning('SIGINT or CTRL-C detected. Please wait until the service has stopped.')
 	display.lcd_clear()
-	display.lcd_display_string("Manual cancel.", 1)
-	display.lcd_display_string("Exiting app.", 2)
+	printLCD("Manual cancel.", 1)
+	printLCD("Exiting app.", 2)
 	exit(0)
 
 
@@ -193,12 +198,12 @@ def readConfig():
 		global hostname
 		hostname = config["piholemon"]["hostname"]
 		print("Config successfully loaded.")
-		display.lcd_display_string("Config loaded", 2)
+		printLCD("Config loaded", 2)
 	else:
 		printwarning("Config does not exist, creating new file.")
 		webtoken = ""
 
-		display.lcd_display_string("Creating config", 2)
+		printLCD("Creating config", 2)
 		# Detect pihole system
 		print("Detecting your PiHole...")
 		hostname = findPihole()
@@ -214,7 +219,7 @@ def readConfig():
 		with open("piholemon_config.ini", "w") as configfile:
 			config.write(configfile)
 			print("Stored a new config file.")
-			display.lcd_display_string("Stored config  ", 2)
+			printLCD("Stored config  ", 2)
 
 # Detect PiHole by hostname
 def findPihole():
@@ -310,14 +315,12 @@ if __name__ == '__main__':
 
 
 	if detectPihole() == True:
-		clearDisplayLine(2)
-		display.lcd_display_string(str(hostname), 2)
+		printLCD(str(hostname), 2)
 		time.sleep(1.5)
 	else:
 		printerror("PiHole could not be found!")
+		printLCD("PiHole not found", 2)
 
-
-	nlb = ""
 	lb = ""
 	line1 = ""
 	run = 0
@@ -336,8 +339,8 @@ if __name__ == '__main__':
 
 		if is_connected() == False:
 			display.lcd_clear()
-			display.lcd_display_string("No network.", 1)
-			display.lcd_display_string("Check router.", 2)
+			printLCD("No network.", 1)
+			printLCD("Check router.", 2)
 			printHeader()
 			printerror("The network cannot be reached. Please check your router.")
 			wait()
@@ -345,8 +348,8 @@ if __name__ == '__main__':
 
 		if detectPihole() == False:
 			display.lcd_clear()
-			display.lcd_display_string("PiHole not found", 1)
-			display.lcd_display_string("Check LAN/Power.", 2)
+			printLCD("PiHole not found", 1)
+			printLCD("Check LAN/Power.", 2)
 			printHeader()
 			printerror("The PiHole on " + str(hostname) + " could not be found.")
 			printerror("Please check the power of your PiHole and if its connected to LAN")
@@ -358,8 +361,8 @@ if __name__ == '__main__':
 
 		if getPiholeStatus() == False:
 			display.lcd_clear()
-			display.lcd_display_string("PiHole Off", 1)
-			display.lcd_display_string("Please wait...", 2)
+			printLCD("PiHole Off", 1)
+			printLCD("Please wait...", 2)
 			printHeader()
 			printwarning("The PiHole was detected, but it returned that blocking is turned off.")
 			printwarning("This can happen during an update of the PiHole.")
@@ -367,16 +370,11 @@ if __name__ == '__main__':
 			continue
 
 		printHeader()
-		nlb = getLastBlock()
-		if nlb is None:
-			printerror("The last block from PiHole could not be read (Returned nothing)")
-			lb = "Error reading"
 
-
-		line2 = chr(0) + " " + str(getTodayRequest()) + "  " + chr(1) + " " + str(getTodayBlocked())
-		if line1 is not line2:
+		line2 = chr(0) + str(getTodayRequest()) + "  " + chr(1) + str(getTodayBlocked())
+		if line1 != line2:
 			line1 = line2
-			display.lcd_display_string(line2, 1)
+			printLCD(line2, 1)
 
 
 #		if run == 0:
@@ -386,8 +384,15 @@ if __name__ == '__main__':
 #			run = 0
 #			display.lcd_display_string("PiHole enabled .", 1)
 
-		if nlb is not lb:
-			print("Last block:\t\t" + nlb)
-			display.lcd_display_string(nlb, 2)
+		nlb = getLastBlock()
+		if nlb is None:
+			printerror("The last block from PiHole could not be read (Returned nothing)")
+			lb = "Error reading"
+
+		print("Last block:\t\t" + nlb)
+
+		if nlb != lb:
+			lb = nlb
+			printLCD(nlb, 2)
 		wait()
 
